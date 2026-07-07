@@ -15,9 +15,9 @@ app = FastAPI()
 #---------------------------Patient Model-----------------------------
 class Patient(BaseModel):
 
-    id : Annotated[str , Field(..., description= "ID of the patient" , example = "P001")]
-    name : Annotated[str , Field(...,description = "Name of the patient" , example = "lokita")]
-    city : Annotated[str , Field(..., description = "City where patient lives" , example = "Noida")]
+    id : Annotated[str , Field(..., description= "ID of the patient" , examples = ["P001"])]
+    name : Annotated[str , Field(...,description = "Name of the patient" , examples = ["lokita"])]
+    city : Annotated[str , Field(..., description = "City where patient lives" , examples = ["Noida"])]
     age : Annotated[int , Field(... , gt = 0 , lt = 120 , description = "Age of the patient")]
     gender : Annotated[Literal["female", "male", "other"], Field(..., description = "Gender of the patient")]
     height : Annotated[float , Field(... , gt = 0 , description = "Height of the patient in mtrs")]
@@ -62,17 +62,17 @@ def load_data():
 #save patient data to JSON file
 def save_data(data):    
     with open("patients.json", "w") as f:
-        json.dump(data, f)
+        json.dump(data, f , indent=4)
 
 #---------------------------Home page-----------------------------
 @app.get("/")
 def home():
-    return {"message": "Patient management sysytem api is running."}
+    return {"message": "Patient management system api is running."}
 
 #---------------------------About the api-----------------------------
 @app.get("/about")
 def about():
-    return {"message": "A fully functional api to manage your patients records."}
+    return {"message": "A fully functional api to manage patients records."}
 
 #---------------------------View all patients-----------------------------
 @app.get("/patients")
@@ -80,36 +80,39 @@ def patients():
     data = load_data() 
     return data
 
-#---------------------------View patient by id-----------------------------
-@app.get("/patients/{patient_id}")
-def view_patient(patient_id: str):
-
-    data = load_data()
-
-    if patient_id not in data:
-        raise HTTPException(status_code=404, detail="Patient not found")
-
-    return data[patient_id]
-
 #---------------------Search Patient by Name or City----------------------
 
 @app.get("/patients/search")
-def search_patient(name: Optional[str] = Query(None),city: Optional[str] = Query(None)):
-    
+def search_patient(name: Optional[str] = Query(None, description="Search by patient name"),city: Optional[str] = Query(None, description="Search by city")):
     data = load_data()
-
     result = {}
+
+    # At least one query parameter should be provided
+    if not name and not city:
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide name or city to search."
+        )
 
     for patient_id, patient in data.items():
 
-        if name and patient["name"].lower() == name.lower():
-            result[patient_id] = patient
+        if name and city:
+            if (patient["name"].lower() == name.lower() and patient["city"].lower() == city.lower()):
+                result[patient_id] = patient
 
-        elif city and patient["city"].lower() == city.lower():
-            result[patient_id] = patient
+        elif name:
+            if patient["name"].lower() == name.lower():
+                result[patient_id] = patient
+
+        elif city:
+            if patient["city"].lower() == city.lower():
+                result[patient_id] = patient
 
     if not result:
-        raise HTTPException(status_code=404, detail="Patient not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Patient not found."
+        )
 
     return result
 
@@ -141,7 +144,7 @@ def patient_statistics():
         elif patient["verdict"] == "Overweight":
             overweight += 1
 
-        else:
+        elif patient["verdict"] == "Obese":
             obese += 1
 
     average_bmi = round(total_bmi / total, 2) if total else 0
@@ -157,8 +160,8 @@ def patient_statistics():
 
 #---------------------Sort Patients----------------------
 @app.get("/patients/sort")
-def sort_patients(sort_by: str = Query(..., description="sort on the basis of height, weight or bmi"), order: str = Query("asc", description="sort in ascending or descending order")):
-   
+def sort_patients(sort_by: Literal["height", "weight", "bmi"] = Query(..., description="sort on the basis of height, weight or bmi"), order: str = Query("asc", description="sort in ascending or descending order")):
+
     data = load_data()
 
     valid_fields = ["height", "weight", "bmi"]
@@ -173,7 +176,18 @@ def sort_patients(sort_by: str = Query(..., description="sort on the basis of he
     sort_order = True if order == "desc" else False
     sorted_data = sorted(data.items(), key=lambda x: x[1].get(sort_by , 0), reverse=sort_order)
 
-    return sorted_data
+    return dict(sorted_data)
+
+#---------------------------View patient by id-----------------------------
+@app.get("/patients/{patient_id}")
+def view_patient(patient_id: str = Path(..., description="ID of the patient to view", examples=["P001"])):
+
+    data = load_data()
+
+    if patient_id not in data:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    return data[patient_id]
 
 #---------------------------Create Patient-----------------------------
 @app.post("/patients")
@@ -217,7 +231,8 @@ def update_patient(patient_id : str , patient_update : PatientUpdate):
     existing_patient_info["id"] = patient_id
 
     # pydantic model -> dictionary
-    existing_patient_info = Patient(**existing_patient_info).model_dump(exclude=['id'])   
+    validated_patient = Patient(**existing_patient_info)
+    existing_patient_info = validated_patient.model_dump(exclude=["id"]) 
 
     #add this dictionary to the data
     data[patient_id] = existing_patient_info
