@@ -87,7 +87,7 @@ to access the interactive Swagger UI.
 
 Interactive API documentation generated automatically by FastAPI.
 
-![Swagger UI](images/swagger-ui.png)
+![Swagger UI](swagger-ui.png)
 
 ---
 
@@ -95,7 +95,7 @@ Interactive API documentation generated automatically by FastAPI.
 
 Create a new patient using the POST endpoint.
 
-![Create Patient](images/create-patient.png)
+![Create Patient](create-patient.png)
 
 ---
 
@@ -103,7 +103,7 @@ Create a new patient using the POST endpoint.
 
 View the total number of patients, average BMI, and BMI category distribution.
 
-![Patient Statistics](images/patient-statistics.png)
+![Patient Statistics](patient-statistics.png)
 
 ## 📚 What I Learned
 
