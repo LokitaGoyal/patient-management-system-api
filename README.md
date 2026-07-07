@@ -81,6 +81,30 @@ to access the interactive Swagger UI.
 
 ---
 
+## 📸 API Preview
+
+### Swagger UI
+
+Interactive API documentation generated automatically by FastAPI.
+
+![Swagger UI](images/swagger-ui.png)
+
+---
+
+### Create Patient
+
+Create a new patient using the POST endpoint.
+
+![Create Patient](images/create-patient.png)
+
+---
+
+### Patient Statistics
+
+View the total number of patients, average BMI, and BMI category distribution.
+
+![Patient Statistics](images/patient-statistics.png)
+
 ## 📚 What I Learned
 
 - Building REST APIs with FastAPI
